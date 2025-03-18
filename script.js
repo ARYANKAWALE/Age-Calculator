@@ -1,28 +1,28 @@
-let userInput = document.getElementById("date");
-userInput.max = new Date().toISOString().split("T")[0];
-let result = document.getElementById("result");
-
-// Add input event listener for real-time validation
-userInput.addEventListener('input', function() {
-    const selectedDate = new Date(this.value);
+// Make calculateAge function globally available
+window.calculateAge = function() {
+    const dateInput = document.getElementById('date');
+    const result = document.getElementById('result');
+    const daysLived = document.getElementById('days-lived');
+    const hoursLived = document.getElementById('hours-lived');
+    const minutesLived = document.getElementById('minutes-lived');
+    const nextBirthdayCountdown = document.getElementById('next-birthday-countdown');
+    
+    const birthDate = new Date(dateInput.value);
     const today = new Date();
     
-    if (selectedDate > today) {
-        this.setCustomValidity('Please select a date in the past');
-    } else {
-        this.setCustomValidity('');
+    // Clear any existing error first
+    clearError();
+    
+    if (!dateInput.value) {
+        showError('Please select your birth date');
+        return;
     }
-});
 
-function calculateAge() {
-    const birthDate = new Date(document.getElementById('date').value);
-    const today = new Date();
-    
     if (birthDate > today) {
         showError('Please select a date in the past');
         return;
     }
-    
+
     // Calculate age components
     const ageInMilliseconds = today - birthDate;
     const ageInYears = Math.floor(ageInMilliseconds / (365.25 * 24 * 60 * 60 * 1000));
@@ -40,70 +40,94 @@ function calculateAge() {
         nextBirthday.setFullYear(today.getFullYear() + 1);
     }
     const daysToNextBirthday = Math.ceil((nextBirthday - today) / (24 * 60 * 60 * 1000));
-    
-    // Update results with animations
-    updateResultWithAnimation('result', `You are <span>${ageInYears}</span> years, <span>${ageInMonths}</span> months, and <span>${ageInDays}</span> days old`);
-    updateResultWithAnimation('days-lived', totalDays.toLocaleString());
-    updateResultWithAnimation('hours-lived', totalHours.toLocaleString());
-    updateResultWithAnimation('minutes-lived', totalMinutes.toLocaleString());
-    updateResultWithAnimation('next-birthday-countdown', `${daysToNextBirthday} days until your next birthday!`);
-    
-    // Animate cards
-    animateResults();
-}
 
-function updateResultWithAnimation(elementId, newValue) {
-    const element = document.getElementById(elementId);
-    element.style.opacity = '0';
-    element.style.transform = 'translateY(10px)';
-    
+    // Animate results
+    result.style.opacity = '0';
     setTimeout(() => {
-        element.innerHTML = newValue;
-        element.style.transition = 'all 0.3s ease';
-        element.style.opacity = '1';
-        element.style.transform = 'translateY(0)';
-    }, 150);
+        result.innerHTML = `You are <span>${ageInYears}</span> years, <span>${ageInMonths}</span> months, and <span>${ageInDays}</span> days old`;
+        result.style.opacity = '1';
+    }, 300);
+
+    // Animate detailed results
+    animateValue(daysLived, 0, totalDays, 1000);
+    animateValue(hoursLived, 0, totalHours, 1000);
+    animateValue(minutesLived, 0, totalMinutes, 1000);
+    
+    nextBirthdayCountdown.textContent = `${daysToNextBirthday} days`;
 }
 
-function animateResults() {
-    const cards = document.querySelectorAll('.result-card');
-    cards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                card.style.transition = 'all 0.5s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, 50);
-        }, index * 100);
+document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('date');
+    const calculateBtn = document.getElementById('calculate');
+    
+    // Set max date to today
+    dateInput.max = new Date().toISOString().split('T')[0];
+    
+    // Add input validation
+    dateInput.addEventListener('input', (e) => {
+        const date = new Date(e.target.value);
+        const today = new Date();
+        
+        clearError(); // Clear any existing error message first
+        
+        if (date > today) {
+            showError('Please select a date in the past');
+        }
     });
-}
 
-function showError(message) {
-    const input = document.getElementById('date');
-    input.classList.add('error');
-    
-    // Create and show error message
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    input.parentNode.appendChild(errorDiv);
-    
-    // Remove error after 3 seconds
-    setTimeout(() => {
-        input.classList.remove('error');
-        errorDiv.remove();
-    }, 3000);
-}
+    // Add event listeners
+    calculateBtn.addEventListener('click', calculateAge);
+    dateInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            calculateAge();
+        }
+    });
 
-// Add keyboard support
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        calculateAge();
-    }
+    // Add smooth transitions for hover effects
+    const cards = document.querySelectorAll('.result-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+        });
+    });
 });
 
-function getDaysInMonth(year, month) {
-  return new Date(year, month, 0).getDate();
+// Show error message
+function showError(message) {
+    clearError(); // Clear any existing error first
+    
+    const dateInput = document.getElementById('date');
+    // Check if error message already exists
+    if (!dateInput.parentNode.querySelector('.error-message')) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        dateInput.parentNode.appendChild(errorDiv);
+        dateInput.classList.add('error');
+    }
+}
+
+// Clear error message
+function clearError() {
+    const dateInput = document.getElementById('date');
+    const errorMessages = dateInput.parentNode.querySelectorAll('.error-message');
+    errorMessages.forEach(msg => msg.remove());
+    dateInput.classList.remove('error');
+}
+
+// Add smooth animation for results
+function animateValue(element, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        element.textContent = Math.floor(progress * (end - start) + start).toLocaleString();
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
 }
